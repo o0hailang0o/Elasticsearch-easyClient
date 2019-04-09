@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <button id="button">提交</button>
+</body>
+<script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+<script>
+    $("#button").click(function () {
+        var data = {};
+        data.index = "s-department";
+        data.conditions = [{field:"year",value:"="},{field:"month",value:"="},{field:"dCompanyId",value:"="}];
+        data.params = {year:2019,month:"1",dCompanyId:155};
+        data.aggs = {groups:["dDeptId"],values:[{field:"money",value:"sum"}]}
+        data.sort = {field:"sum_money",order:"asc","status":1}
+
+        $.ajax({
+              url:"http://localhost:8081/hello/search",
+              type:  "post",
+              contentType:"application/json;charset=utf-8",
+              data:JSON.stringify(data),
+              dataType:"json",
+              success:function (result) {
+                  console.log(result);
+              },error:function (result) {
+                  console.log(result)
+              }
+         });
+    });
+</script>
+</html>

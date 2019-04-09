@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bootstrap 模板</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 引入 Bootstrap -->
+    <link href="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.13.1/bootstrap-table.min.css">
+
+    <!-- HTML5 Shiv 和 Respond.js 用于让 IE8 支持 HTML5元素和媒体查询 -->
+    <!-- 注意： 如果通过 file://  引入 Respond.js 文件，则该文件无法起效果 -->
+    <!--[if lt IE 9]>
+    <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+    <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+    <![endif]-->
+</head>
+<body>
+    <div class="row">
+        <div class="col-md-2" id="tableNameList">
+            <!--<div class="col-md-12">
+                fieldName
+            </div>-->
+        </div>
+
+        <div class="col-md-10" id="index" style="display: none">
+            <div class="text-center">
+                 <h3 id="tableName"></h3>
+            </div>
+            <div class="text-center">
+                <button id="putMapping" class="btn-primary" >建立索引</button>
+            </div>
+
+            <div class="text-center">
+                <button id="syncEs" class="btn-primary">同步数据</button>
+            </div>
+
+            <div class="text-center">
+                <button id="deleteData" class="btn-danger">删除数据</button>
+            </div>
+
+            <div class="text-center">
+                <button id="deleteIndex" class="btn-danger">删除索引</button>
+            </div>
+
+            <div class="row text-center">
+                <div class="text-center">
+                    <h5>属性列表</h5>
+                </div>
+                <div id="getFieldList">
+
+                </div>
+            </div>
+
+            <div class="text-center">
+                <button id="button" class="btn-primary" >查看</button>
+            </div>
+
+            <div class="text-center">
+                <div class="text-right" id="count"></div>
+                <table id="table" class="table table-striped table-bordered table-hover table-condensed"></table>
+            </div>
+        </div>
+
+
+    </div>
+</body>
+
+<!-- jQuery (Bootstrap 的 JavaScript 插件需要引入 jQuery) -->
+<script src="https://cdn.staticfile.org/jquery/2.1.1/jquery.min.js"></script>
+<!-- 包括所有已编译的插件 -->
+<script src="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+<script src="common.js"></script>
+<script>
+    var path = "http://localhost:8081/hello";
+    $(function () {
+        getAjax(path+"/query/table-name",function (data) {
+            $("#tableNameList").empty();
+            for(var i=0;i<data.length;i++){
+                $("#tableNameList").append('<div class="col-md-12 tableName">'+data[i]+'</div>');
+            }
+        });
+
+        $(document).on("click", '.tableName', function(event) {
+            $(this).css("color","blue");
+            $(this).siblings().css("color","black");
+            $("#tableName").html($(this).html());
+            $("#index").show();
+
+            getAjax(path+"/query/field/info?tableName="+$("#tableName").html(),function (data) {
+                $("#getFieldList").empty();
+                for(var i=0;i<data.length;i++){
+                    $("#getFieldList").append('<div class="row" data="'+data[i].columnName+'"><div class="col-md-2">'+data[i].columnComment+'</div><div class="col-md-2">'+data[i].columnName+'</div>' +
+                        '<div class="col-md-2">' +
+                        '<select class="calSelect">' +
+                        '<option value="">选择计算方式</option>' +
+                        '<option value="=">=</option>' +
+                        '<option value="like">like</option>' +
+                        '<option value="in">in</option>' +
+                        '<option value="!=">!=</option>' +
+                        '<option value=">">大于</option>' +
+                        '<option value="<">小于</option>' +
+                        '<option value=">=">大于等于</option>' +
+                        '<option value="<=">小于等于</option>' +
+                        '</select>' +
+                        '</div>' +
+                        '<div class="col-md-1"><select class="groupSelect"><option value="">选择分组</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></div>' +
+                        '<div class="col-md-3 checkboxSelect"><input type="checkbox" value="sum"/>sum<input type="checkbox" value="avg"/>avg<input type="checkbox" value="min"/>min<input type="checkbox" value="max"/>max<input type="checkbox" value="count"/>count</div>' +
+                        '<div class="col-md-1"><input class="paramInput" type="text"/></div>' +
+                        '</div>'
+                    );
+                }
+            });
+
+
+        });
+
+        $(document).on("click", '#putMapping', function(event) {
+            postAjax(path+"/build/mapping?tableName="+$("#tableName").html(),null,function (data) {
+                if(data.code == 1){
+                    alert("success");
+                }else{
+                    alert("failed");
+                }
+            });
+        });
+
+        $(document).on("click", '#syncEs', function(event) {
+            postAjax(path+"/sync/es?tableName="+$("#tableName").html(),null,function (data) {
+                if(data.code == 1){
+                    alert("success");
+                }else{
+                    alert("failed");
+                }
+            });
+        });
+
+        $(document).on("click", '#deleteData', function(event) {
+            deleteAjax(path+"/delete/data?tableName="+$("#tableName").html(),function (data) {
+                console.log(data)
+                if(data.code == 1){
+                    alert("success");
+                }else{
+                    alert("failed");
+                }
+            });
+        });
+
+        $(document).on("click", '#deleteIndex', function(event) {
+            deleteAjax(path+"/delete/index?tableName="+$("#tableName").html(),function (data) {
+                if(data.code == 1){
+                    alert("success");
+                }else{
+                    alert("failed");
+                }
+            });
+        });
+
+
+        $(document).on("click", '#button', function(event) {
+            var model = handlerModel();
+            postAjax(path+"/search",model,function (data) {
+                var result = data.jsonObjectList;
+                $("#count").html(data.count+"条记录");
+                if(result!=null&&result.length!=0){
+                    var json = result[0];
+                    var columns = [];
+                    for(var p in json){
+                        var column = {};
+                        column.field = p;
+                        column.title = p;
+                        columns.push(column);
+                    }
+                    $('#table').bootstrapTable({
+                        columns: columns,
+                        data: result
+                    })
+                }else{
+                    $("#count").html("0条记录")
+                    $("#table").empty();
+                }
+
+            })
+
+
+
+        })
+
+
+        function handlerModel() {
+            var model = {};
+            var tableName = $("#tableName").html();
+            model.index = tableName.replace(RegExp("_","g"),"-");
+            var $calSelect = $("#getFieldList").find(".calSelect");
+            var conditions = [];
+            for(var i=0;i<$calSelect.length;i++){
+                if($calSelect.eq(i).val()!=""){
+                    var condition = {};
+                    condition.value =  $calSelect.eq(i).val();
+                    condition.field = $calSelect.eq(i).parent("div").parent("div").attr("data");
+                    conditions.push(condition);
+                }
+            }
+            model.conditions = conditions;
+            var groups = [];
+
+            var $groupSelect = $("#getFieldList").find(".groupSelect");
+            var arr = [];
+            for(var i=0;i<$groupSelect.length;i++){
+                if($groupSelect.eq(i).val()!=""){
+                    var obj = {};
+                    obj.field = $groupSelect.eq(i).parent("div").parent("div").attr("data");
+                    obj.num = $groupSelect.eq(i).val();
+                    arr.push(obj);
+                }
+            }
+
+            arr.sort(function (a,b) {
+                return a.num - b.num>0?1:-1
+            })
+
+            for(var i=0;i<arr.length;i++){
+                groups.push(arr[i].field);
+            }
+            model.aggs = {};
+            model.aggs.groups =groups;
+
+            var values = [];
+            var $checkboxSelect = $("#getFieldList").find(".checkboxSelect");
+            for(var i=0;i<$checkboxSelect.length;i++){
+                var $checkbox = $checkboxSelect.eq(i).find("input:checkbox");
+                for(var j=0;j<$checkbox.length;j++){
+                    if($checkbox.eq(j).prop("checked")){
+                        var value={};
+                        value.field = $checkbox.eq(j).parent("div").parent("div").attr("data");
+                        value.value = $checkbox.eq(j).val();
+                        values.push(value);
+                    }
+                }
+            }
+            model.aggs.values = values;
+
+            var params = {};
+
+            var $paramInput = $("#getFieldList").find(".paramInput");
+            for(var i=0;i<$paramInput.length;i++){
+                if($paramInput.eq(i).val()!=""){
+                    params[$paramInput.eq(i).parent("div").parent("div").attr("data")] = $paramInput.eq(i).val();
+                }
+            }
+            model.params = params;
+            return model;
+        }
+
+
+
+    })
+</script>
+</html>
